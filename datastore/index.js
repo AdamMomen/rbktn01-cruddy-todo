@@ -8,25 +8,72 @@ var items = {};
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
-  items[id] = text;
-  callback(null, { id, text });
+   counter.getNextUniqueId((err, id)=>{
+    fs.writeFile(`${this.dataDir}/${id}.txt`, text, (err)=>{
+      if (err) 
+        throw err;
+      else 
+        callback(err, { id, text })
+     });
+    });
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
-  });
-  callback(null, data);
+  fs.readdir(`${this.dataDir}`, (err, data)=>{
+    if(err) 
+      callback(err, [])
+    else {
+      var result = data.map(fileName =>{
+         var ids  = fileName.slice(0, fileName.length-4)
+         fs.readFile(`${this.dataDir}/${ids}.txt`, (err,task)=>{
+        if (err) throw err;
+            // console.log(task.toString())
+        console.log({ id : ids, text: task + '' })
+         return JSON.stringify({ id : ids, text: task + '' })
+        // console.log( "test----",{ id : x, text: text.toString() })
+         }) 
+        // })
+         
+       })
+      callback(null, result )
+    }
+  })
+
+
+// console.log() 
+  // var data = _.map(items, (text, id) => {
+
+  //   return { id, text };
+  // });
+  // callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  var found = false; 
+  fs.readdir(`${this.dataDir}`,(err, data)=> {
+    data.forEach((element,i) => {
+      if (element === `${id}.txt`) {
+        found = true
+        callback(null,id)
+      } else if(i === data.length -1 && !found)  {
+        callback(new Error(`No item with id: ${id}`,null));
+      }
+    })
+})
+      
+//       console.log( data.toString())
+//       callback(null, { id, text: data.toString() })
+//     };
+    
+// // console.log('testing = :',data.toString())
+//   });
+  // var text = items[id];
+  // if (!text) {
+  //   callback(new Error(`No item with id: ${id}`));
+  // } else {
+  //   callback(null, { id, text });
+  // }
+    
 };
 
 exports.update = (id, text, callback) => {
